@@ -1,101 +1,76 @@
-/* Roadmap, Missables, Next up and Progress views. */
-.roadmap-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.roadmap-stage.is-wide { grid-column: span 2; }
-.roadmap-stage.is-wide .stage-trophies { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 10px; }
-.roadmap-legend { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 13px; }
-.legend-earned { color: var(--safe); text-decoration: line-through; }
-.legend-masked { color: #d8c4ff; font-style: italic; }
-.roadmap-stage { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 9px; display: flex; flex-direction: column; gap: 4px; }
-.roadmap-stage.is-current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.roadmap-stage.is-done { opacity: .8; }
-.stage-head { display: grid; grid-template-columns: 26px 1fr auto; gap: 6px; align-items: start; }
-.stage-n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: var(--panel-2); border: 1px solid var(--line); font-weight: 900; }
-.is-current .stage-n { background: var(--accent); color: var(--accent-ink); }
-.stage-group { display: block; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
-.group-collectibles .stage-group { color: #8ee8ff; }
-.group-activities .stage-group { color: #b6f09c; }
-.group-cleanup .stage-group { color: #ffaba0; }
-.group-platinum .stage-group { color: var(--platinum); }
-.stage-title h3 { font-size: 14px; line-height: 1.2; }
-.stage-title { min-width: 0; }
-.stage-trophy.is-missable .stage-trophy-name { white-space: normal; color: #ffb0b3; font-weight: 700; }
-.stage-count { font-weight: 800; font-size: 14px; color: var(--muted); }
-.stage-summary { font-size: 12.5px; color: var(--muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.stage-trophies { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; }
-.stage-trophy { display: flex; align-items: center; gap: 5px; font-size: 13.5px; padding: 1px 3px; min-width: 0; border-radius: 6px; cursor: pointer; }
-.stage-trophy:hover { background: var(--panel-2); }
-.stage-trophy-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stage-trophy .tag { font-size: 11px; padding: 0 5px; }
-.stage-trophy.is-earned .stage-trophy-name { color: var(--safe); text-decoration: line-through; text-decoration-color: rgba(74, 222, 128, .5); }
-.stage-trophy.is-masked .stage-trophy-name { color: #d8c4ff; font-style: italic; }
+/* Roadmap stages, missables cards, spoiler list and the progress/export panel. */
 
-.missables-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.missable-card { border-radius: var(--radius); padding: 7px 12px; cursor: pointer; background: var(--missable-bg); border: 2px solid var(--missable); }
-.missable-card.is-caution { background: var(--caution-bg); border-color: var(--caution); }
-.missable-card.is-selected { outline: 2px solid var(--text); outline-offset: 1px; }
-.missable-card.is-earned { opacity: .7; }
-.missable-head { display: flex; align-items: center; gap: 8px; font-size: 16px; }
-.ponr-line { display: flex; gap: 8px; align-items: baseline; margin: 5px 0 3px; font-size: 14.5px; }
-.ponr-line span { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #ffb0b3; }
-.is-caution .ponr-line span { color: var(--caution); }
-.missable-card p { font-size: 14px; color: #e9dfe0; line-height: 1.38; }
-.run-warnings { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
-.run-warnings li { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--caution); border-radius: 8px; padding: 5px 10px; }
-.cite-name { color: var(--accent); font-size: 13px; }
-.spoiler-grid { column-count: 2; column-gap: 8px; }
-.spoiler-grid .spoiler-group { break-inside: avoid; margin-bottom: 8px; }
-.spoiler-panel-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
-.spoiler-state { align-self: flex-start; font-weight: 800; font-size: 14px; padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
-.spoiler-state.is-on { background: #2a1840; border-color: #a855f7; color: #e9d5ff; }
-.spoiler-note { color: var(--muted); font-size: 13.5px; margin-bottom: 8px; line-height: 1.35; }
-.mask-bar { color: #4b3a72; letter-spacing: -.04em; }
-.missable-src { margin-left: auto; font-size: 12.5px; color: var(--accent); font-weight: 700; }
-.missable-timeline { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
-.missable-timeline li { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid #33405c; border-radius: 6px; padding: 4px 6px; min-height: 52px; display: flex; flex-direction: column; gap: 3px; }
-.missable-timeline li.has-ponr { border-top-color: var(--missable); }
-.tl-label { font-size: 12.5px; font-weight: 800; color: var(--muted); }
-.tl-pin { font-size: 12px; font-weight: 700; border-radius: 5px; padding: 1px 5px; line-height: 1.25; }
-.pin-missable { background: var(--missable); color: #fff; }
-.pin-caution { background: var(--caution); color: #2a1a00; }
-.spoiler-group { background: #18122a; border: 1px solid #3b2d5c; border-radius: var(--radius); padding: 7px 10px; }
-.spoiler-group h3 { font-size: 13px; color: #c9a5ff; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
-.spoiler-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-.spoiler-group li { display: flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer; }
-.spoiler-group li.is-earned > span:not(.grade-badge) { color: var(--safe); }
-.spoiler-group li.is-earned > span:not(.grade-badge)::after { content: " ✓"; }
+/* Platinum roadmap: stages flow down three newspaper-style columns in play order. */
+.roadmap-stages { columns: 3; column-gap: 12px; }
+.roadmap-stage {
+  break-inside: avoid; margin-bottom: 9px; padding: 5px 8px 6px;
+  border: 1px solid var(--rule-strong); border-top: 3px solid var(--navy); border-radius: var(--radius); background: var(--card);
+}
+.roadmap-stage.is-done { border-top-color: var(--ok); }
+.roadmap-stage header { display: flex; align-items: center; gap: 6px; }
+.roadmap-stage .stage-num {
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px;
+  background: var(--navy); color: #fff; font-size: 12px; font-weight: 800;
+}
+.roadmap-stage h3 { font-size: 14.5px; line-height: 1.15; }
+.roadmap-stage .stage-bar { margin: 4px 0 3px; }
+.stage-summary { font-size: 13px; color: var(--ink-2); line-height: 1.3; margin-bottom: 3px; }
+.roadmap-trophy {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 2px 0;
+  border-top: 1px solid #eee8dc; font-size: 14px; cursor: pointer;
+}
+.roadmap-trophy input { margin: 0; accent-color: var(--ok); }
+.roadmap-trophy .grade-badge { width: 19px; height: 19px; font-size: 11px; }
+.roadmap-name { font-weight: 600; flex: 1; min-width: 0; }
+.roadmap-trophy.is-earned .roadmap-name { color: var(--ok); text-decoration: line-through; text-decoration-color: #9ccbb6; }
+.roadmap-trophy.is-masked .roadmap-name { color: var(--differ); font-style: italic; }
+.roadmap-pnr { flex-basis: 100%; padding-left: 44px; font-size: 12.5px; font-weight: 700; color: var(--danger); }
+.roadmap-trophy.miss-watch .roadmap-pnr { color: var(--warn); }
 
-.next-up-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.next-card { display: grid; grid-template-columns: 26px 28px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; cursor: pointer; }
-.next-card.is-missable { border-color: var(--missable); box-shadow: inset 4px 0 0 var(--missable); }
-.next-card.is-selected { border-color: var(--accent); }
-.next-n { font-weight: 900; font-size: 18px; color: var(--accent); }
-.next-text { display: flex; flex-direction: column; }
-.next-text span { color: var(--muted); font-size: 14px; }
+/* Missables view. */
+.missables-note { margin-bottom: 8px; padding: 5px 10px; border-left: 4px solid var(--navy); background: var(--navy-soft); font-size: 14px; }
+.missables-list { columns: 2; column-gap: 8px; }
+.missable-card {
+  break-inside: avoid; margin-bottom: 8px; padding: 6px 10px; border: 1px solid var(--rule-strong); border-left: 5px solid #d9a441;
+  border-radius: var(--radius); background: var(--card); cursor: pointer;
+}
+.missable-card.miss-possibly { column-span: all; border-color: var(--danger); border-left-color: var(--danger); background: var(--danger-soft); }
+.missable-card header { display: flex; align-items: center; gap: 7px; }
+.missable-card h3 { font-size: 15.5px; }
+.verdict { padding: 0 6px; border-radius: 3px; font-size: 12px; font-weight: 800; letter-spacing: .3px; }
+.verdict-possibly { background: var(--danger); color: #fff; }
+.verdict-watch { background: var(--warn-soft); color: var(--warn); border: 1px solid #d9a441; }
+.missable-stage { margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--navy); }
+.missable-why { font-size: 14px; color: var(--ink-2); }
+.missable-card.is-earned h3 { color: var(--ok); }
 
-.stats-panel .guide-title { margin-bottom: 8px; }
-.points-card { background: #16223a; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
-.points-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--platinum); }
-.points-line { font-size: 15px; margin: 0 0 4px; }
-.points-line b { font-size: 22px; }
-.points-bar { height: 9px; }
-.stats-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.stat-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.stat-rows li { display: grid; grid-template-columns: 78px 1fr 44px; gap: 6px; align-items: center; font-size: 14px; }
+.spoiler-list { display: flex; flex-direction: column; }
+.spoiler-item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 3px 0; border-bottom: 1px solid #e6dfd0; }
+.spoiler-item.is-masked .row-name { color: var(--differ); font-style: italic; }
+.spoiler-item.is-earned .row-name { color: var(--ok); }
+
+/* Progress & export panel. */
+.stats-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.stats-card { padding: 8px 10px; border: 1px solid var(--rule-strong); border-radius: var(--radius); background: var(--card); }
+.stats-card h3 { margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-2); }
+.stat-row { display: grid; grid-template-columns: 110px 1fr 52px; align-items: center; gap: 8px; padding: 2px 0; font-size: 14px; }
 .stat-num { text-align: right; font-weight: 700; }
-.stat-bar { height: 8px; }
-.fill-platinum .bar-fill { background: var(--platinum); }
-.fill-gold .bar-fill { background: var(--gold); }
-.fill-silver .bar-fill { background: var(--silver); }
-.fill-bronze .bar-fill { background: var(--bronze); }
-.stage-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.stage-strip li { display: flex; flex-direction: column; align-items: center; background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 3px 0; font-size: 12.5px; }
-.stage-strip li.is-partial { border-color: var(--caution); }
-.stage-strip li.is-done { border-color: var(--safe); color: var(--safe); }
-.export-box { margin-top: 8px; background: #0f2b2f; border: 1px solid #1f5f58; border-radius: var(--radius); padding: 9px 12px; }
-.export-box > p { font-size: 14px; margin-bottom: 7px; }
-.export-actions { display: flex; gap: 8px; margin-bottom: 6px; }
-.export-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13.5px; }
-.export-log li { display: grid; grid-template-columns: 92px 1fr; gap: 6px; }
-.export-log span { color: var(--muted); font-weight: 700; }
-.export-log b { color: #bff7ee; font-weight: 600; }
-.export-preview { margin: 6px 0 0; font-size: 12px; color: #b9c6d8; background: #091618; border-radius: 6px; padding: 6px 8px; white-space: pre-wrap; }
+.stage-card { grid-column: 1 / -1; }
+.stage-stats { columns: 2; column-gap: 24px; }
+.stage-stats .stat-row { grid-template-columns: 250px 1fr 40px; break-inside: avoid; font-size: 13.5px; padding: 1px 0; }
+.stage-stats .stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.points-big { font-size: 15px; color: var(--ink-2); }
+.points-big b { font-size: 30px; color: var(--ink); }
+.points-bar { height: 10px; margin: 4px 0; }
+.points-note { font-size: 13px; color: var(--ink-3); }
+.stats-card .risk-head { margin: 8px 0 2px; }
+.risk-list li { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.risk-list .miss-possibly b { color: var(--danger); }
+.risk-list .miss-watch b { color: var(--warn); }
+.transfer-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.transfer-log { font-size: 13.5px; color: var(--ink-2); }
+.transfer-log li::before { content: "› "; color: var(--navy); font-weight: 800; }
+.file-preview {
+  max-height: 116px; margin: 6px 0 0; padding: 6px 8px; overflow: hidden; border-radius: 4px;
+  background: #f3eee3; font: 12px/1.3 var(--mono); color: var(--ink-2); white-space: pre;
+}

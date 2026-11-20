@@ -1,112 +1,87 @@
-// The open trophy guide: official description, missable verdict, roadmap stage, collectible counter,
-// numbered steps with citation markers, location, the guide in our words, and the numbered sources list.
+// The guide for one trophy: official description, missable box with the point of no return, roadmap stage,
+// location, collectible counter, numbered steps each with its own citations, a "sources differ" box where
+// guides disagree, and our write-up. Citations highlight the matching entry in the sources column.
 
-import { el, linkSourceMarkers, progressBar } from './dom.js';
-import { MISSABLE_LABELS, gradeLabel } from './trophy-data.js';
-import { gradeBadge, renderTrophyTags } from './checklist-view.js';
-import { displayName, isSpoilerMasked } from './spoiler-mode.js';
-import { collectibleCount } from './progress-store.js';
+import { citeMarkers, el, gradeBadge, progressBar, proseWithCitations } from './dom.js';
+import { CONFIDENCE_LABELS, gradeLabel, KIND_LABELS } from './trophy-data.js';
+import { getCount, isEarned } from './progress-store.js';
+import { isTrophyMasked, maskedTrophyName } from './spoiler-mode.js';
 
-function highlightSource(panel, n) {
-  const item = panel.querySelector(`#source-${n}`);
-  if (!item) return;
-  item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  item.classList.remove('is-flash');
-  void item.offsetWidth;
-  item.classList.add('is-flash');
+function renderMissableBox(trophy, onCite) {
+  if (!trophy.isMissable) {
+    return el('div', { class: 'safe-box' }, el('b', {}, 'Not missable'), ' · can be done any time', trophy.roadmapStage <= 5 ? ' in or after its chapter' : '');
+  }
+  const possibly = trophy.missable === 'possibly';
+  return el('section', { id: 'missable-box', class: `missable-box ${possibly ? 'is-possibly' : 'is-watch'}` },
+    el('h3', {}, possibly ? 'Missable? POSSIBLY — when and why' : 'WATCH — time-sensitive'),
+    el('p', { class: 'point-of-no-return' }, el('span', {}, 'Point of no return'), ` ${trophy.pointOfNoReturn}`),
+    el('p', {}, trophy.missableWhen, ' ',
+      trophy.differs && possibly ? el('span', { class: 'missable-refs' }, 'Disputed — see Sources differ ', citeMarkers(trophy.differs.a.cite.concat(trophy.differs.b.cite), onCite)) : null));
 }
 
-export function renderMissableVerdict(trophy) {
-  if (trophy.missable === 'no') {
-    return el('div', { class: 'verdict verdict-safe' },
-      el('strong', {}, 'Not missable'),
-      el('span', {}, trophy.kind === 'story'
-        ? ' Story progress awards it; it cannot be skipped. No mission replay, so keep chapter saves.'
-        : ' Available in free roam after the story too.'));
-  }
-  return el('div', { class: `verdict ${trophy.missable === 'yes' ? 'verdict-missable' : 'verdict-caution'}` },
-    el('div', { class: 'verdict-title' },
-      el('strong', {}, `${MISSABLE_LABELS[trophy.missable]}: when and why`),
-      trophy.pointOfNoReturn ? el('span', { class: 'ponr' }, `Point of no return: ${trophy.pointOfNoReturn}`) : null),
-    el('p', {}, trophy.missableWhen));
+function renderMetaGrid(trophy) {
+  return el('dl', { class: 'meta-grid' },
+    el('div', {}, el('dt', {}, 'Where / how'), el('dd', {}, trophy.location)),
+    el('div', { title: trophy.stageTitle }, el('dt', {}, 'Roadmap stage'), el('dd', {}, `Stage ${trophy.roadmapStage} of 10`),
+      el('dd', { class: `conf-${trophy.confidence}` }, CONFIDENCE_LABELS[trophy.confidence])));
 }
 
 export function renderCollectibleCounter(trophy, state, actions) {
   if (!trophy.count) return null;
-  const have = collectibleCount(state.progress, trophy);
-  const target = trophy.count.target;
-  const step = target >= 100 ? 5 : 1;
-  return el('div', { class: 'collectible-counter' },
+  const value = getCount(state.progress, trophy);
+  const { target, unit } = trophy.count;
+  return el('div', { class: 'collectible-counter', id: 'collectible-counter' },
     el('span', { class: 'counter-label' }, 'Counter'),
-    el('button', { class: 'counter-btn', type: 'button', 'aria-label': 'Decrease', onclick: () => actions.setCount(trophy, have - step) }, '−'),
-    el('span', { class: 'counter-value' }, el('b', {}, String(have)), ` / ${target} ${trophy.count.unit}`),
-    el('button', { class: 'counter-btn', type: 'button', 'aria-label': 'Increase', onclick: () => actions.setCount(trophy, have + step) }, '+'),
-    progressBar(have, target, 'counter-bar'));
+    el('button', { class: 'counter-btn', type: 'button', 'aria-label': 'Minus one', onclick: () => actions.setCount(trophy, value - 1) }, '−'),
+    el('span', { class: 'counter-value' }, el('b', {}, String(value)), ` / ${target} ${unit}`),
+    el('button', { class: 'counter-btn', type: 'button', 'aria-label': 'Plus one', onclick: () => actions.setCount(trophy, value + 1) }, '+'),
+    progressBar(value, target, 'counter-bar'));
 }
 
-export function renderSourcesList(trophy) {
-  return el('ol', { id: 'trophy-sources', class: 'sources-list' },
-    trophy.sources.map((s, i) => el('li', { id: `source-${i + 1}` },
-      el('span', { class: 'source-n' }, `[${i + 1}]`),
-      el('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, s.name),
-      el('span', { class: 'source-host' }, hostOf(s.url), el('span', { class: 'source-date' }, ` · retrieved ${s.retrieved}`)))));
+function renderSteps(trophy, onCite) {
+  return el('section', { class: 'guide-steps' },
+    el('h3', {}, 'Steps ', el('small', {}, `${trophy.steps.length} · each cited`)),
+    el('ol', {}, trophy.steps.map((step) => el('li', {}, step.text, ' ', citeMarkers(step.cite, onCite)))));
 }
 
-function hostOf(url) {
-  return url.replace(/^[a-z]+:\/\/(www\.)?/i, '').split('/')[0];
+export function renderSourcesDiffer(trophy, onCite) {
+  const d = trophy.differs;
+  if (!d) return null;
+  return el('section', { class: 'differ-box' },
+    el('h3', {}, 'Sources differ — both versions shown'),
+    el('p', { class: 'differ-topic' }, d.topic),
+    el('p', {}, el('b', {}, 'A '), d.a.text, ' ', citeMarkers(d.a.cite, onCite)),
+    el('p', {}, el('b', {}, 'B '), d.b.text, ' ', citeMarkers(d.b.cite, onCite)),
+    el('p', { class: 'differ-call' }, el('b', {}, 'Our call '), d.call));
 }
 
-function renderMaskedGuide(panel, trophy, state, actions) {
-  panel.replaceChildren(
-    el('div', { class: 'guide-head' }, gradeBadge(trophy.grade, 'is-large'),
-      el('div', {}, el('h2', { class: 'guide-title masked-text' }, displayName(trophy, state)),
-        el('p', { class: 'guide-sub' }, `${gradeLabel(trophy.grade)} · ${trophy.chapter} · roadmap stage ${trophy.roadmapStage}`))),
-    el('div', { class: 'spoiler-shield' },
-      el('p', {}, 'Spoiler mode is hiding this trophy’s name, description and guide until you earn it.'),
-      el('div', { class: 'shield-lines', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')),
-      el('button', { class: 'btn btn-accent', type: 'button', onclick: () => actions.revealTrophy(trophy) }, 'Reveal this one')),
-    renderMissableVerdict(trophy));
+function renderMaskedGuide(container, trophy, actions) {
+  container.replaceChildren(el('div', { class: 'masked-guide' },
+    el('h2', {}, maskedTrophyName(trophy)),
+    el('p', {}, 'Spoiler mode hides this trophy\'s name, description and guide until you earn it.'),
+    el('button', { class: 'btn', type: 'button', onclick: () => actions.revealTrophy(trophy) }, 'Reveal this one'),
+    el('button', { class: 'btn', type: 'button', onclick: () => actions.toggleEarned(trophy, true) }, 'Mark earned')));
 }
 
-export function renderTrophyGuide(panel, trophy, state, actions) {
-  if (!trophy) {
-    panel.replaceChildren(el('p', { class: 'guide-empty' }, 'Pick a trophy to open its guide.'));
-    return;
-  }
-  if (isSpoilerMasked(trophy, state)) {
-    renderMaskedGuide(panel, trophy, state, actions);
-    return;
-  }
-  const earned = state.progress.earned.has(trophy.id);
-  const stage = state.roadmap.find((s) => s.stage === trophy.roadmapStage);
-  const cite = (n) => highlightSource(panel, n);
-  panel.replaceChildren(
-    el('div', { class: 'guide-head' },
-      gradeBadge(trophy.grade, 'is-large'),
-      el('div', { class: 'guide-head-text' },
-        el('h2', { id: 'guide-title', class: 'guide-title' }, trophy.name),
-        el('p', { class: 'guide-sub' }, `#${trophy.id} · ${gradeLabel(trophy.grade)}${trophy.hidden ? ' · hidden on PSN' : ''}`, renderTrophyTags(trophy, state))),
-      el('label', { class: `earned-toggle ${earned ? 'is-on' : ''}` },
+export function renderTrophyGuide(container, trophy, state, actions) {
+  if (isTrophyMasked(trophy, state)) return renderMaskedGuide(container, trophy, actions);
+  const onCite = (ref) => actions.highlightSource(ref);
+  const earned = isEarned(state.progress, trophy);
+  container.replaceChildren(
+    el('header', { class: 'guide-head' },
+      gradeBadge(trophy.grade),
+      el('div', {},
+        el('h2', { id: 'guide-title' }, trophy.name),
+        el('p', { class: 'guide-sub' }, `#${trophy.id} · ${gradeLabel(trophy.grade)} · ${KIND_LABELS[trophy.kind]} · Stage ${trophy.roadmapStage} · ${trophy.chapter}${trophy.hidden ? ' · hidden on PSN' : ''}`)),
+      el('label', { class: `earned-toggle${earned ? ' is-on' : ''}` },
         el('input', { type: 'checkbox', checked: earned, onchange: (e) => actions.toggleEarned(trophy, e.target.checked) }),
-        earned ? 'Earned' : 'Mark earned')),
-    el('div', { class: 'guide-columns' },
-      el('div', { class: 'guide-col guide-col-facts' },
-        el('blockquote', { id: 'official-description', class: 'official-description' },
-          el('span', { class: 'official-label' }, 'Official description · PlayStation'),
-          el('q', {}, trophy.description)),
-        renderMissableVerdict(trophy),
-        el('div', { class: 'guide-meta' },
-          el('div', { class: 'meta-cell' }, el('span', {}, 'Roadmap stage'),
-            el('button', { class: 'link-btn', type: 'button', onclick: () => actions.openTab('roadmap') }, `${trophy.roadmapStage} · ${stage?.title ?? ''}`)),
-          el('div', { class: 'meta-cell' }, el('span', {}, 'Chapter'), el('b', {}, trophy.chapter)),
-          el('div', { class: 'meta-cell meta-wide' }, el('span', {}, 'Where / how'), el('b', {}, trophy.location ?? ''))),
-        renderCollectibleCounter(trophy, state, actions),
-        el('h3', { class: 'guide-h' }, 'Guide · in our words'),
-        el('p', { id: 'guide-text', class: 'guide-text' }, linkSourceMarkers(trophy.guide, cite))),
-      el('div', { class: 'guide-col guide-col-steps' },
-        el('h3', { class: 'guide-h first' }, 'Steps'),
-        el('ol', { id: 'guide-steps', class: 'guide-steps' }, trophy.steps.map((s) => el('li', {}, linkSourceMarkers(s, cite)))),
-        el('h3', { class: 'guide-h' }, `Sources [1]–[${trophy.sources.length}]`),
-        renderSourcesList(trophy))),
-  );
+        earned ? `Earned ${state.progress.earned[trophy.id]}` : 'Mark earned')),
+    el('blockquote', { class: 'official-description' },
+      el('span', { class: 'label' }, 'Official description · PlayStation'), `“${trophy.description}”`),
+    renderMissableBox(trophy, onCite),
+    renderMetaGrid(trophy),
+    renderCollectibleCounter(trophy, state, actions),
+    renderSteps(trophy, onCite),
+    renderSourcesDiffer(trophy, onCite),
+    el('section', { class: 'guide-prose' }, el('h3', {}, 'Guide · in our words'), el('p', {}, proseWithCitations(trophy.guide, onCite))));
 }

@@ -1,6 +1,6 @@
 [
-  { "file": "01-cover.jpg", "path": "/#tab=checklist&trophy=28", "spoiler": true, "note": "Checklist in roadmap order with spoiler mode on; Positive Mental Attitude guide open", "viewport": { "width": 1280, "height": 720 } },
-  { "file": "02-roadmap.jpg", "path": "/#tab=roadmap", "spoiler": false, "note": "Platinum roadmap, 10 stages with per-stage progress and missable flags", "viewport": { "width": 1280, "height": 720 } },
-  { "file": "03-missables-spoilers.jpg", "path": "/#tab=missables", "spoiler": true, "note": "Missables with points of no return; hidden story trophies masked", "viewport": { "width": 1280, "height": 720 } },
-  { "file": "04-progress-export.jpg", "path": "/#tab=progress", "filters": ["collectible", "activity"], "note": "Stats by grade and kind, PSN points, export/import after an import and an export", "viewport": { "width": 1280, "height": 720 } }
+  { "file": "01-cover.jpg", "path": "/#tab=checklist&trophy=28", "spoiler": true, "note": "Audit strip, checklist in roadmap order with spoiler mode on, Positive Mental Attitude guide with missable box, counter, cited steps and sources-differ box, Next up and sources with cited-by counts", "viewport": { "width": 1280, "height": 800 } },
+  { "file": "02-roadmap.jpg", "path": "/#tab=roadmap", "spoiler": false, "note": "Platinum roadmap: 10 stages with progress bars, cited summaries and missables flagged inline; source register beside it", "viewport": { "width": 1280, "height": 800 } },
+  { "file": "03-missables-spoilers.jpg", "path": "/#tab=missables", "spoiler": true, "note": "Missables with points of no return; spoiler list masking 25 of 28 hidden trophies", "viewport": { "width": 1280, "height": 800 } },
+  { "file": "04-progress-export.jpg", "path": "/#tab=progress", "filters": ["collectible", "activity"], "note": "Filtered checklist beside stats by grade, kind and stage, points toward platinum, export and import log", "viewport": { "width": 1280, "height": 800 } }
 ]

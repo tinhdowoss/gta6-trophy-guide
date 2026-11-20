@@ -1,28 +1,27 @@
-/* Checklist rows: checkbox, grade badge, official name + description, tags. */
-.trophy-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+/* Checklist rows: checkbox, grade letter, official name + description, tags (missable, counter, kind, sources). */
+.stage-head {
+  display: flex; align-items: baseline; gap: 6px; margin: 8px 0 3px; padding-bottom: 2px;
+  border-bottom: 1px solid var(--rule-strong); font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+}
+.stage-num { color: var(--navy); text-transform: uppercase; letter-spacing: .4px; }
+.stage-count { margin-left: auto; color: var(--ink-3); font-weight: 600; }
+
 .trophy-row {
-  display: grid; grid-template-columns: 20px 26px minmax(0, 1fr); align-items: center; gap: 9px;
-  padding: 5px 9px; border-radius: 9px; background: var(--panel); border: 1px solid transparent; cursor: pointer;
+  display: grid; grid-template-columns: 16px 22px minmax(0, 1fr) auto; gap: 0 7px; align-items: center;
+  padding: 3px 4px; border-bottom: 1px solid #ebe5d8; border-left: 3px solid transparent; cursor: pointer;
 }
-.trophy-row:hover { border-color: var(--line); }
-.trophy-row.is-selected { border-color: var(--accent); background: #10283a; }
-.trophy-row.is-missable { box-shadow: inset 3px 0 0 var(--missable); }
-.earned-box { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-.trophy-text { display: flex; flex-direction: column; min-width: 0; }
-.trophy-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.trophy-desc { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.trophy-name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.trophy-name-line .trophy-name { flex: 0 1 auto; min-width: 0; }
-.trophy-tags { display: flex; gap: 4px; flex-wrap: nowrap; margin-left: auto; flex: none; }
-.trophy-row.is-earned .trophy-name { color: var(--safe); }
-.trophy-row.is-earned .trophy-name::after { content: " ✓"; }
-.trophy-row.is-masked .trophy-name { color: #d8c4ff; font-style: italic; }
-.trophy-row.is-masked .trophy-desc { color: #8f80ad; }
-.empty { color: var(--muted); padding: 20px; }
-.stage-divider {
-  display: flex; align-items: baseline; gap: 8px; padding: 5px 4px 1px; margin-top: 4px;
-  font-size: 13px; border-bottom: 1px solid var(--line);
-}
-.stage-divider-n { font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
-.stage-divider-title { color: #d6deea; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stage-divider-count { color: var(--muted); font-weight: 700; }
+.trophy-row:hover { background: #f4efe4; }
+.trophy-row.is-selected { background: var(--navy-soft); border-left-color: var(--navy); }
+.trophy-row.miss-possibly { border-left-color: var(--danger); }
+.trophy-row.miss-watch:not(.is-selected) { border-left-color: #d9a441; }
+.earned-check { width: 16px; height: 16px; margin: 0; accent-color: var(--ok); cursor: pointer; }
+.row-text { display: flex; flex-direction: column; min-width: 0; }
+.row-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-desc { font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.row-tags > div { display: flex; gap: 3px; }
+.row-tags .tag { font-size: 12px; line-height: 16px; padding: 0 5px; }
+.trophy-row.is-earned .row-name { color: var(--ok); }
+.trophy-row.is-earned .row-name::after { content: " ✓"; }
+.trophy-row.is-masked .row-name { color: var(--differ); font-style: italic; }
+.trophy-row.is-masked .row-desc { color: var(--ink-3); font-style: italic; }

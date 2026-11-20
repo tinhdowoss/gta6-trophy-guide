@@ -1,42 +1,30 @@
-// Next up: the unearned trophies to chase now, picked by roadmap order with missables pulled to the front.
+// "Next up in roadmap order": the first unearned trophies following the platinum roadmap, missables first
+// within each stage, so the reader always sees what to do next.
 
-import { el } from './dom.js';
-import { gradeBadge } from './checklist-view.js';
+import { el, gradeBadge } from './dom.js';
+import { compareRoadmapOrder } from './trophy-data.js';
+import { isEarned } from './progress-store.js';
 import { displayName } from './spoiler-mode.js';
-import { collectibleCount } from './progress-store.js';
-import { applyTrophyFilters, describeActiveFilters } from './trophy-filters.js';
+import { missableTag } from './checklist-view.js';
 
-export function pickNextUpTrophies(state, limit = 8) {
-  const open = applyTrophyFilters(state.trophies, state).filter((t) => !state.progress.earned.has(t.id) && t.id !== 1);
-  if (open.length === 0) return [];
-  const firstStage = Math.min(...open.map((t) => t.roadmapStage));
-  return open
-    .map((t) => ({ t, score: (t.roadmapStage - firstStage) * 10 - (t.missable === 'yes' ? 25 : t.missable === 'caution' ? 12 : 0) }))
-    .sort((a, b) => a.score - b.score || a.t.id - b.t.id)
-    .slice(0, limit)
-    .map(({ t }) => t);
+export function buildNextUpList(state, limit = 5) {
+  return state.trophies
+    .filter((t) => !isEarned(state.progress, t) && t.grade !== 'platinum')
+    .sort(compareRoadmapOrder)
+    .slice(0, limit);
 }
 
-function nextUpReason(t, state) {
-  if (t.missable === 'yes') return `Do now: closes at ${t.pointOfNoReturn}`;
-  if (t.missable === 'caution') return `Soon: ${t.pointOfNoReturn ?? 'time-sensitive'}`;
-  if (t.count) return `${collectibleCount(state.progress, t)}/${t.count.target} ${t.count.unit}`;
-  return `Roadmap stage ${t.roadmapStage} · ${t.chapter}`;
-}
-
-export function renderNextUpView(container, state, actions) {
-  const picks = pickNextUpTrophies(state);
+export function renderNextUpPanel(container, state, actions, limit = 5) {
+  const next = buildNextUpList(state, limit);
+  const remaining = state.trophies.filter((t) => !isEarned(state.progress, t)).length;
   container.replaceChildren(
-    el('div', { class: 'view-head' },
+    el('div', { class: 'column-head' },
       el('h2', {}, 'Next up'),
-      el('span', { class: 'view-meta' }, `Earliest roadmap stage first, missables pulled forward · ${describeActiveFilters(state)}`)),
-    el('ol', { id: 'next-up-list', class: 'next-up-list' }, picks.map((t, i) => el('li', {
-      class: `next-card ${t.isMissable ? 'is-missable' : ''} ${state.ui.selectedId === t.id ? 'is-selected' : ''}`,
-      onclick: () => actions.selectTrophy(t.id),
-    },
-    el('span', { class: 'next-n' }, String(i + 1)),
-    gradeBadge(t.grade),
-    el('span', { class: 'next-text' }, el('b', {}, displayName(t, state)), el('span', {}, nextUpReason(t, state))),
-    el('button', { class: 'btn btn-small', type: 'button', onclick: (e) => { e.stopPropagation(); actions.toggleEarned(t, true); } }, 'Earned ✓')))),
-  );
+      el('span', { class: 'column-meta' }, `roadmap order · ${remaining} left`)),
+    el('ol', { id: 'next-up-list', class: 'next-up-list' },
+      next.map((t) => el('li', { class: 'next-up-item', onclick: () => actions.selectTrophy(t.id, 'checklist') },
+        gradeBadge(t.grade),
+        el('span', { class: 'next-name' }, displayName(t, state)),
+        missableTag(t),
+        el('span', { class: 'next-stage' }, `S${t.roadmapStage}`)))));
 }

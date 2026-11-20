@@ -1,79 +1,88 @@
-// Progress numbers: the header's total and per-grade counts, and the Progress & export panel
-// (earned by grade, by kind, PSN points toward the platinum, export/import with the file format shown).
+// Progress numbers: the header (total, per-grade counts, PSN points) and the Progress & export panel
+// (earned by grade, by kind, points toward platinum, export to a file and import back).
 
-import { el, percent, progressBar } from './dom.js';
-import { GRADE_ORDER, GRADE_POINTS, KIND_LABELS, gradeLabel } from './trophy-data.js';
-import { gradeBadge } from './checklist-view.js';
-import { buildPlatinumRoadmap } from './platinum-roadmap.js';
+import { el, gradeBadge, percent, progressBar } from './dom.js';
+import { compareRoadmapOrder, GRADE_LETTER, GRADE_ORDER, GRADE_POINTS, gradeLabel, KIND_LABELS } from './trophy-data.js';
+import { buildProgressFile, isEarned } from './progress-store.js';
+import { displayName } from './spoiler-mode.js';
 
-export function computeGradeProgress(trophies, progress) {
-  return GRADE_ORDER.map((grade) => {
-    const list = trophies.filter((t) => t.grade === grade);
-    return { grade, total: list.length, earned: list.filter((t) => progress.earned.has(t.id)).length };
-  });
-}
-
-export function computeKindProgress(trophies, progress) {
-  return Object.keys(KIND_LABELS).map((kind) => {
-    const list = trophies.filter((t) => t.kind === kind);
-    return { kind, total: list.length, earned: list.filter((t) => progress.earned.has(t.id)).length };
-  }).filter((k) => k.total > 0);
-}
-
-export function computePlatinumPoints(trophies, progress) {
-  const total = trophies.reduce((sum, t) => sum + GRADE_POINTS[t.grade], 0);
-  const earned = trophies.filter((t) => progress.earned.has(t.id)).reduce((sum, t) => sum + GRADE_POINTS[t.grade], 0);
-  return { total, earned };
+export function computeProgressStats(state) {
+  const earned = state.trophies.filter((t) => isEarned(state.progress, t));
+  const byGrade = Object.fromEntries(GRADE_ORDER.map((g) => [g, {
+    earned: earned.filter((t) => t.grade === g).length,
+    total: state.trophies.filter((t) => t.grade === g).length,
+  }]));
+  const byKind = Object.keys(KIND_LABELS).map((kind) => ({
+    kind,
+    earned: earned.filter((t) => t.kind === kind).length,
+    total: state.trophies.filter((t) => t.kind === kind).length,
+  })).filter((k) => k.total);
+  const points = earned.reduce((n, t) => n + GRADE_POINTS[t.grade], 0);
+  const maxPoints = state.trophies.reduce((n, t) => n + GRADE_POINTS[t.grade], 0);
+  return { earned: earned.length, total: state.trophies.length, byGrade, byKind, points, maxPoints };
 }
 
 export function renderProgressHeader(state) {
-  const earned = state.progress.earned.size;
-  const total = state.trophies.length;
+  const stats = computeProgressStats(state);
   document.getElementById('total-progress').replaceChildren(
-    el('div', { class: 'total-line' }, el('b', {}, `${earned}/${total}`), el('span', {}, ` trophies · ${percent(earned, total)}%`)),
-    progressBar(earned, total, 'total-bar'));
-  document.getElementById('grade-progress').replaceChildren(
-    ...computeGradeProgress(state.trophies, state.progress).map((g) => el('li', { class: `grade-pill pill-${g.grade}`, title: `${gradeLabel(g.grade)}: ${g.earned} of ${g.total}` },
-      gradeBadge(g.grade, 'is-small'), el('span', {}, el('b', {}, String(g.earned)), `/${g.total}`), el('small', {}, gradeLabel(g.grade)))));
+    el('span', { class: 'total-num' }, el('b', {}, String(stats.earned)), `/${stats.total}`),
+    el('span', { class: 'total-pct' }, `${percent(stats.earned, stats.total)}%`),
+    progressBar(stats.earned, stats.total, 'total-bar'));
+  document.getElementById('grade-progress').replaceChildren(...GRADE_ORDER.map((g) => el('li', { class: `grade-pill grade-pill-${g}`, title: gradeLabel(g) },
+    gradeBadge(g), el('b', {}, String(stats.byGrade[g].earned)), `/${stats.byGrade[g].total}`)));
 }
 
-function statRows(rows, labelOf) {
-  return el('ul', { class: 'stat-rows' }, rows.map((r) => el('li', {},
-    el('span', { class: 'stat-label' }, labelOf(r)),
-    progressBar(r.earned, r.total, `stat-bar ${r.grade ? `fill-${r.grade}` : ''}`),
-    el('span', { class: 'stat-num' }, `${r.earned}/${r.total}`))));
+// A short, one-line-per-entry preview of the JSON file Export writes.
+function describeExportFile(file) {
+  const lines = [`{ "format": "${file.format}",`, `  "exportedAt": "${file.exportedAt.slice(0, 19)}Z",`, '  "earned": ['];
+  for (const e of file.earned.slice(0, 4)) lines.push(`    { "id": ${e.id}, "name": ${JSON.stringify(e.name)}, "on": "${e.on}" },`);
+  if (file.earned.length > 4) lines.push(`    … ${file.earned.length - 4} more`);
+  lines.push('  ],', `  "counts": ${JSON.stringify(file.counts)},`, `  "settings": ${JSON.stringify(file.settings)} }`);
+  return lines.join('\n');
 }
 
-export function renderProgressStats(panel, state, actions) {
-  const points = computePlatinumPoints(state.trophies, state.progress);
-  const stages = buildPlatinumRoadmap(state.roadmap, state.trophies, state.progress);
-  const lastExport = state.ui.lastExport;
-  const counted = state.trophies.filter((t) => t.count && (state.progress.counts[t.id] ?? 0) > 0).length;
-  panel.replaceChildren(
-    el('div', { id: 'progress-stats', class: 'stats-panel' },
-      el('h2', { class: 'guide-title' }, 'Progress & stats'),
-      el('div', { class: 'points-card' },
-        el('span', { class: 'points-label' }, 'PSN points toward the platinum'),
-        el('div', { class: 'points-line' }, el('b', {}, points.earned.toLocaleString('en-US')), ` / ${points.total.toLocaleString('en-US')} pts · ${percent(points.earned, points.total)}%`),
-        progressBar(points.earned, points.total, 'points-bar')),
-      el('div', { class: 'stats-cols' },
-        el('section', {}, el('h3', { class: 'guide-h' }, 'Earned by grade'),
-          statRows(computeGradeProgress(state.trophies, state.progress), (r) => gradeLabel(r.grade))),
-        el('section', {}, el('h3', { class: 'guide-h' }, 'Earned by kind'),
-          statRows(computeKindProgress(state.trophies, state.progress), (r) => KIND_LABELS[r.kind]))),
-      el('h3', { class: 'guide-h' }, 'Roadmap stages'),
-      el('ol', { class: 'stage-strip' }, stages.map((s) => el('li', { title: s.title, class: s.earned === s.items.length ? 'is-done' : s.earned ? 'is-partial' : '' },
-        el('b', {}, String(s.stage)), el('span', {}, `${s.earned}/${s.items.length}`)))),
-      el('section', { id: 'export-import-box', class: 'export-box' },
-        el('h3', { class: 'guide-h' }, 'Back up or move your progress'),
-        el('p', {}, `Saved automatically in this browser (localStorage). ${state.progress.earned.size} earned, ${counted} counters in progress.`),
-        el('div', { class: 'export-actions' },
-          el('button', { class: 'btn btn-accent', type: 'button', onclick: () => actions.exportProgress() }, '⬇ Export progress (.json)'),
-          el('button', { class: 'btn', type: 'button', onclick: () => document.getElementById('import-progress-input').click() }, '⬆ Import file')),
-        el('ul', { class: 'export-log' },
-          el('li', {}, el('span', {}, 'Last export'), el('b', {}, lastExport ? `${lastExport.name} · ${lastExport.earned} trophies · ${lastExport.at} UTC` : 'none this session')),
-          el('li', {}, el('span', {}, 'Last import'), el('b', {}, state.ui.lastImport ?? 'none this session')),
-          el('li', {}, el('span', {}, 'File format'), el('b', {}, 'leonida-ledger-progress/v1 · ids + names, counters, spoiler setting')))),
-    ),
-  );
+function renderStageRemaining(state) {
+  return el('section', { class: 'stats-card stage-card' }, el('h3', {}, 'Roadmap stages · earned / total'),
+    el('ol', { class: 'stage-stats' }, state.roadmap.map((stage) => {
+      const items = state.trophies.filter((t) => t.roadmapStage === stage.stage);
+      return statRow(`${stage.stage}. ${stage.title}`, items.filter((t) => isEarned(state.progress, t)).length, items.length);
+    })));
+}
+
+function statRow(label, part, whole, extra = null) {
+  return el('li', { class: 'stat-row' },
+    el('span', { class: 'stat-label' }, label, extra),
+    progressBar(part, whole, 'stat-bar'),
+    el('span', { class: 'stat-num' }, `${part}/${whole}`));
+}
+
+export function renderProgressStats(container, state, actions) {
+  const stats = computeProgressStats(state);
+  const file = buildProgressFile(state.progress, state.trophies, state.settings);
+  const preview = describeExportFile(file);
+  container.replaceChildren(
+    el('div', { class: 'column-head' }, el('h2', {}, 'Progress & export'),
+      el('span', { class: 'column-meta' }, state.progress.updatedAt ? `saved in this browser ${state.progress.updatedAt.slice(0, 16).replace('T', ' ')}` : 'nothing saved yet')),
+    el('div', { class: 'stats-grid' },
+      el('section', { class: 'stats-card' }, el('h3', {}, 'Earned by grade'),
+        el('ul', {}, GRADE_ORDER.map((g) => statRow(`${GRADE_LETTER[g]} · ${gradeLabel(g)}`, stats.byGrade[g].earned, stats.byGrade[g].total)))),
+      el('section', { class: 'stats-card' }, el('h3', {}, 'Earned by kind'),
+        el('ul', {}, stats.byKind.map((k) => statRow(KIND_LABELS[k.kind], k.earned, k.total)))),
+      el('section', { class: 'stats-card points-card' }, el('h3', {}, 'Points toward platinum'),
+        el('p', { class: 'points-big' }, el('b', {}, String(stats.points)), ` / ${stats.maxPoints} pts`),
+        progressBar(stats.points, stats.maxPoints, 'points-bar'),
+        el('p', { class: 'points-note' }, `${percent(stats.points, stats.maxPoints)}% of points · ${stats.total - stats.earned} trophies to go · B 15 · S 30 · G 90 · P 300`),
+        el('h3', { class: 'risk-head' }, 'Still at risk'),
+        el('ul', { class: 'risk-list' }, state.trophies.filter((t) => t.isMissable && !isEarned(state.progress, t)).sort(compareRoadmapOrder).map((t) =>
+          el('li', { class: `miss-${t.missable}` }, el('b', {}, t.missable === 'possibly' ? 'Missable? ' : 'Watch '),
+            `${displayName(t, state)} — ${t.pointOfNoReturn.replace(/^Watch: /, '')}`)))),
+      el('section', { class: 'stats-card transfer-card', id: 'export-import-panel' }, el('h3', {}, 'Export / import'),
+        el('div', { class: 'transfer-actions' },
+          el('button', { class: 'btn btn-primary', type: 'button', id: 'export-progress-panel', onclick: () => actions.exportProgress() }, '↓ Export progress (.json)'),
+          el('label', { class: 'btn', for: 'import-progress-input' }, '↑ Import a file')),
+        el('ul', { class: 'transfer-log' },
+          el('li', {}, state.ui.lastExport ? `Last export: ${state.ui.lastExport}` : 'No export yet this session'),
+          el('li', {}, state.ui.lastImport ? `Last import: ${state.ui.lastImport}` : 'No import yet this session')),
+        el('pre', { class: 'file-preview', 'aria-label': 'Export file preview' }, preview)),
+      renderStageRemaining(state)));
 }

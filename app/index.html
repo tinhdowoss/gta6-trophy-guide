@@ -4,21 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leonida Ledger · GTA VI trophy guide &amp; platinum tracker</title>
-<meta name="description" content="Offline guide and tracker for all 55 Grand Theft Auto VI PS5 trophies: cited guides, platinum roadmap, missables, spoiler mode, export and import.">
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAVklEQVR42mNgQAO6V/b/pyVmwAVobTFeh9DbcgxHDKgDBspyuCNGHTAkHMAtpICCRx0w6oBRB4w6YNQBow4gFo86YPg4YLRFNLwdMNozGhSd04HsngMA9WQHf//zSHwAAAAASUVORK5CYII=">
+<meta name="description" content="Offline, cited guide and tracker for all 55 Grand Theft Auto VI PS5 trophies: audit strip, platinum roadmap, missables, spoiler mode, export and import.">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/checklist.css">
 <link rel="stylesheet" href="css/guide-panel.css">
+<link rel="stylesheet" href="css/sources.css">
 <link rel="stylesheet" href="css/views.css">
 </head>
-<body>
+<body data-tab="checklist">
 <header id="progress-header" class="progress-header">
   <div class="brand">
-    <span class="brand-mark" aria-hidden="true">L</span>
+    <span class="brand-mark" aria-hidden="true">LL</span>
     <div>
       <h1 id="app-title">Leonida Ledger</h1>
-      <p class="brand-sub">GTA VI · PS5 trophy guide</p>
+      <p class="brand-sub">GTA VI · PS5 trophy guide &amp; tracker</p>
     </div>
   </div>
   <div id="total-progress" class="total-progress" aria-live="polite"></div>
@@ -27,20 +28,24 @@
     <label id="spoiler-toggle" class="spoiler-toggle" title="Hide names and descriptions of hidden story trophies until earned">
       <input id="spoiler-mode-input" type="checkbox">
       <span class="switch" aria-hidden="true"></span>
-      <span class="spoiler-label">Spoiler mode</span>
+      <span id="spoiler-state">Spoilers hidden</span>
     </label>
     <button id="export-progress" class="btn" type="button" title="Download your progress as a JSON file">Export</button>
     <label id="import-progress" class="btn" title="Load a progress file you exported">Import<input id="import-progress-input" type="file" accept="application/json,.json" hidden></label>
   </div>
 </header>
 
-<nav id="view-tabs" class="view-tabs" role="tablist" aria-label="Views">
-  <button role="tab" data-tab="checklist" type="button">Checklist</button>
-  <button role="tab" data-tab="roadmap" type="button">Platinum roadmap</button>
-  <button role="tab" data-tab="missables" type="button">Missables</button>
-  <button role="tab" data-tab="nextup" type="button">Next up</button>
-  <button role="tab" data-tab="progress" type="button">Progress &amp; export</button>
+<section id="audit-strip" class="audit-strip" aria-label="Guide audit"></section>
+
+<nav id="view-tabs" class="view-tabs" aria-label="Views">
+  <div class="tab-list" role="tablist">
+    <button role="tab" data-tab="checklist" type="button">Checklist &amp; guide</button>
+    <button role="tab" data-tab="roadmap" type="button">Platinum roadmap</button>
+    <button role="tab" data-tab="missables" type="button">Missables</button>
+    <button role="tab" data-tab="progress" type="button">Progress &amp; export</button>
+  </div>
   <span id="save-status" class="save-status">Saved in this browser</span>
+  <input id="trophy-search" type="search" placeholder="Search names, missions, places…" aria-label="Search trophies">
 </nav>
 
 <section id="filter-bar" class="filter-bar" aria-label="Filters">
@@ -57,16 +62,19 @@
     <option value="unearned">Unearned only</option>
     <option value="earned">Earned only</option>
   </select>
-  <input id="trophy-search" type="search" placeholder="Search trophies, missions, places…" aria-label="Search trophies">
 </section>
 
 <main id="app-main" class="app-main">
-  <section id="primary-view" class="primary-view" aria-live="polite"></section>
-  <aside id="trophy-guide-panel" class="trophy-guide-panel" aria-label="Trophy guide"></aside>
+  <section id="primary-view" class="primary-view column" aria-live="polite"></section>
+  <article id="trophy-guide-panel" class="trophy-guide-panel column" aria-label="Trophy guide"></article>
+  <aside id="side-column" class="side-column column" aria-label="Sources and next up">
+    <section id="next-up-panel" class="next-up-panel"></section>
+    <section id="sources-column" class="sources-column"></section>
+  </aside>
 </main>
 
 <div id="toast" class="toast" role="status" hidden></div>
-<noscript><p class="noscript">This guide needs JavaScript. Run <code>node serve.ts</code> and open the local address it prints.</p></noscript>
+<noscript><p class="noscript">This guide needs JavaScript. Run <code>node serve.ts</code> and open the address it prints.</p></noscript>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

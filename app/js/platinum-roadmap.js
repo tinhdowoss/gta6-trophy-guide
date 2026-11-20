@@ -1,46 +1,46 @@
-// The platinum roadmap: the stages from trophies.json in order, each with its trophies, grade badges,
-// a per-stage progress bar and missable trophies flagged inline.
+// The platinum roadmap: ten stages in play order (story chapters, story finale, strands, collectibles,
+// activities, cleanup, 100%), each with its summary, cited sources, progress bar and trophies; missable
+// trophies are flagged inline with their point of no return.
 
-import { el, progressBar } from './dom.js';
-import { gradeBadge } from './checklist-view.js';
-import { displayName, isSpoilerMasked } from './spoiler-mode.js';
+import { citeMarkers, el, gradeBadge, progressBar } from './dom.js';
+import { compareRoadmapOrder } from './trophy-data.js';
+import { getCount, isEarned } from './progress-store.js';
+import { displayName, isTrophyMasked } from './spoiler-mode.js';
+import { missableTag } from './checklist-view.js';
 
-const STAGE_GROUP = { 1: 'Story', 2: 'Story', 3: 'Story', 4: 'Story', 5: 'Story', 6: 'Cleanup', 7: 'Collectibles', 8: 'Activities', 9: 'Cleanup', 10: 'Platinum' };
-
-export function buildPlatinumRoadmap(roadmap, trophies, progress) {
-  return roadmap.map((stage) => {
-    const items = trophies.filter((t) => t.roadmapStage === stage.stage)
-      .sort((a, b) => Number(b.isMissable) - Number(a.isMissable) || a.id - b.id);
-    const earned = items.filter((t) => progress.earned.has(t.id)).length;
-    return { ...stage, group: STAGE_GROUP[stage.stage] ?? 'Cleanup', items, earned, missables: items.filter((t) => t.isMissable).length };
+export function buildPlatinumRoadmap(state) {
+  return state.roadmap.map((stage) => {
+    const trophies = state.trophies.filter((t) => t.roadmapStage === stage.stage).sort(compareRoadmapOrder);
+    return { ...stage, trophies, earned: trophies.filter((t) => isEarned(state.progress, t)).length };
   });
 }
 
+function renderRoadmapTrophy(t, state, actions) {
+  const earned = isEarned(state.progress, t);
+  return el('li', { class: `roadmap-trophy${earned ? ' is-earned' : ''}${isTrophyMasked(t, state) ? ' is-masked' : ''} miss-${t.missable}`, onclick: () => actions.selectTrophy(t.id, 'checklist') },
+    el('input', { type: 'checkbox', checked: earned, 'aria-label': 'Earned', onclick: (e) => e.stopPropagation(), onchange: (e) => actions.toggleEarned(t, e.target.checked) }),
+    gradeBadge(t.grade),
+    el('span', { class: 'roadmap-name' }, displayName(t, state)),
+    t.count ? el('span', { class: 'tag tag-count' }, `${getCount(state.progress, t)}/${t.count.target}`) : null,
+    missableTag(t),
+    t.isMissable ? el('span', { class: 'roadmap-pnr' }, t.pointOfNoReturn.replace(/^Watch: /, '')) : null);
+}
+
 export function renderPlatinumRoadmap(container, state, actions) {
-  const stages = buildPlatinumRoadmap(state.roadmap, state.trophies, state.progress);
-  const current = stages.find((s) => s.earned < s.items.length);
+  const stages = buildPlatinumRoadmap(state);
+  const done = stages.reduce((n, s) => n + s.earned, 0);
   container.replaceChildren(
-    el('div', { class: 'view-head' },
+    el('div', { class: 'column-head' },
       el('h2', {}, 'Platinum roadmap'),
-      el('span', { class: 'view-meta' }, `10 stages in order · ~200 h (KeenGamer, Output Lag) · one playthrough · you are on stage ${current?.stage ?? 10}`),
-      el('span', { class: 'roadmap-legend' },
-        el('span', { class: 'tag tag-missable' }, 'Missable'), el('span', { class: 'tag tag-caution' }, 'Timed'),
-        el('span', { class: 'legend-earned' }, 'earned'), el('span', { class: 'legend-masked' }, 'spoiler-masked'))),
-    el('ol', { id: 'platinum-roadmap', class: 'roadmap-grid' },
-      stages.map((s) => el('li', { class: `roadmap-stage group-${s.group.toLowerCase()} ${s.wide ? 'is-wide' : ''} ${s === current ? 'is-current' : ''} ${s.earned === s.items.length ? 'is-done' : ''}` },
-        el('div', { class: 'stage-head' },
-          el('span', { class: 'stage-n' }, String(s.stage)),
-          el('div', { class: 'stage-title' }, el('span', { class: 'stage-group' }, s.group), el('h3', {}, s.title)),
-          el('span', { class: 'stage-count' }, `${s.earned}/${s.items.length}`)),
-        progressBar(s.earned, s.items.length, 'stage-bar'),
-        el('p', { class: 'stage-summary' }, s.summary),
-        el('ul', { class: 'stage-trophies' }, s.items.map((t) => el('li', {
-          class: `stage-trophy ${t.isMissable ? 'is-missable' : ''} ${state.progress.earned.has(t.id) ? 'is-earned' : ''} ${isSpoilerMasked(t, state) ? 'is-masked' : ''}`,
-          onclick: () => actions.selectTrophy(t.id, 'checklist'),
-        },
-        gradeBadge(t.grade, 'is-small'),
-        el('span', { class: 'stage-trophy-name' }, displayName(t, state)),
-        t.missable === 'yes' ? el('span', { class: 'tag tag-missable' }, 'Missable') : null,
-        t.missable === 'caution' ? el('span', { class: 'tag tag-caution' }, 'Timed') : null)))))),
-  );
+      el('span', { class: 'column-meta' }, `10 stages in play order · ${done}/${state.trophies.length} earned · one playthrough, ~200 h, 4/10`),
+      citeMarkers([3, 4], (ref) => actions.highlightSource(ref))),
+    el('ol', { id: 'platinum-roadmap', class: 'roadmap-stages' },
+      stages.map((stage) => el('li', { class: `roadmap-stage${stage.earned === stage.trophies.length ? ' is-done' : ''}` },
+        el('header', {},
+          el('span', { class: 'stage-num' }, String(stage.stage)),
+          el('h3', {}, stage.title),
+          el('span', { class: 'stage-count' }, `${stage.earned}/${stage.trophies.length}`)),
+        progressBar(stage.earned, stage.trophies.length, 'stage-bar'),
+        el('p', { class: 'stage-summary' }, stage.summary, ' ', citeMarkers(stage.cite ?? [], (ref) => actions.highlightSource(ref))),
+        el('ul', {}, stage.trophies.map((t) => renderRoadmapTrophy(t, state, actions)))))));
 }
