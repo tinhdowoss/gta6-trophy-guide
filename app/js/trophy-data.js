@@ -1,52 +1,50 @@
-// Loads app/data/trophies.json (a local file, same origin) and indexes it for the views.
+// Loads app/data/trophies.json and describes its vocabulary: grades, kinds, PSN points, missable verdicts.
+
+export const GRADE_ORDER = ['platinum', 'gold', 'silver', 'bronze'];
+export const GRADE_LETTER = { platinum: 'P', gold: 'G', silver: 'S', bronze: 'B' };
+export const GRADE_TOTALS = { platinum: 1, gold: 2, silver: 6, bronze: 46 };
+// PlayStation's trophy point values per grade, used for the "points toward platinum" meter.
+export const GRADE_POINTS = { platinum: 300, gold: 90, silver: 30, bronze: 15 };
 
 export const KIND_LABELS = {
   story: 'Story',
-  strand: 'Side strand',
+  strand: 'Strand',
   collectible: 'Collectible',
   activity: 'Activity',
   crime: 'Crime',
   misc: 'Misc',
-  completion: 'Completion',
+  completion: '100%',
 };
 
-export async function loadTrophyData() {
-  const response = await fetch('data/trophies.json');
-  if (!response.ok) throw new Error(`trophies.json: HTTP ${response.status}`);
-  const data = await response.json();
-  return indexTrophyData(data);
+export const MISSABLE_LABELS = {
+  yes: 'Missable',
+  caution: 'Time-sensitive',
+  no: 'Not missable',
+};
+
+export async function loadTrophyData(url = 'data/trophies.json') {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Could not load ${url} (${response.status})`);
+  const doc = await response.json();
+  const trophies = (Array.isArray(doc) ? doc : doc.trophies).map(normalizeTrophy);
+  return { meta: doc, trophies, roadmap: doc.roadmap ?? [], byId: new Map(trophies.map((t) => [t.id, t])) };
 }
 
-export function indexTrophyData(data) {
-  const trophies = data.trophies.slice().sort((a, b) => a.id - b.id);
-  const byId = new Map(trophies.map((t) => [t.id, t]));
-  const sourcesByRef = new Map(data.sourcesRead.map((s) => [s.ref, { ...s, citedBy: 0 }]));
-  for (const trophy of trophies) {
-    for (const source of trophy.sources) {
-      const entry = sourcesByRef.get(source.ref);
-      if (entry) entry.citedBy += 1;
-    }
-  }
-  const stages = data.roadmap.map((stage) => ({
-    ...stage,
-    trophies: trophies.filter((t) => t.roadmapStage === stage.stage).sort(roadmapOrder),
-  }));
-  return { meta: data, trophies, byId, sourcesByRef, stages };
+function normalizeTrophy(t) {
+  return {
+    ...t,
+    steps: t.steps ?? [],
+    sources: t.sources ?? [],
+    missable: t.missable ?? 'no',
+    isMissable: t.missable === 'yes' || t.missable === 'caution',
+    isSpoilerProtected: Boolean(t.hidden),
+  };
 }
 
-/** Inside a roadmap stage: missable first, then watch, then by grade weight, then list order. */
-export function roadmapOrder(a, b) {
-  const risk = { possibly: 0, watch: 1, no: 2 };
-  return (risk[a.missable] - risk[b.missable]) || a.id - b.id;
+export function gradeLabel(grade) {
+  return grade.charAt(0).toUpperCase() + grade.slice(1);
 }
 
-/** The whole list in the order the platinum roadmap plays it. */
-export function trophiesInRoadmapOrder(index) {
-  return index.stages.flatMap((stage) => stage.trophies);
-}
-
-export function searchableText(trophy) {
-  return [trophy.name, trophy.description, trophy.chapter, trophy.guide, ...trophy.steps.map((s) => s.text)]
-    .join(' ')
-    .toLowerCase();
+export function sortTrophiesByList(trophies) {
+  return [...trophies].sort((a, b) => a.id - b.id);
 }

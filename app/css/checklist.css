@@ -1,0 +1,28 @@
+/* Checklist rows: checkbox, grade badge, official name + description, tags. */
+.trophy-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.trophy-row {
+  display: grid; grid-template-columns: 20px 26px minmax(0, 1fr); align-items: center; gap: 9px;
+  padding: 5px 9px; border-radius: 9px; background: var(--panel); border: 1px solid transparent; cursor: pointer;
+}
+.trophy-row:hover { border-color: var(--line); }
+.trophy-row.is-selected { border-color: var(--accent); background: #10283a; }
+.trophy-row.is-missable { box-shadow: inset 3px 0 0 var(--missable); }
+.earned-box { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+.trophy-text { display: flex; flex-direction: column; min-width: 0; }
+.trophy-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trophy-desc { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trophy-name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.trophy-name-line .trophy-name { flex: 0 1 auto; min-width: 0; }
+.trophy-tags { display: flex; gap: 4px; flex-wrap: nowrap; margin-left: auto; flex: none; }
+.trophy-row.is-earned .trophy-name { color: var(--safe); }
+.trophy-row.is-earned .trophy-name::after { content: " ✓"; }
+.trophy-row.is-masked .trophy-name { color: #d8c4ff; font-style: italic; }
+.trophy-row.is-masked .trophy-desc { color: #8f80ad; }
+.empty { color: var(--muted); padding: 20px; }
+.stage-divider {
+  display: flex; align-items: baseline; gap: 8px; padding: 5px 4px 1px; margin-top: 4px;
+  font-size: 13px; border-bottom: 1px solid var(--line);
+}
+.stage-divider-n { font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+.stage-divider-title { color: #d6deea; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-divider-count { color: var(--muted); font-weight: 700; }

@@ -1,33 +1,42 @@
-// Spoiler setting: while it is on, the hidden story and side-strand trophies show no name or description until earned.
+// Spoiler mode: the 28 trophies PlayStation hides (story beats, strands and secrets) keep their name and description
+// masked until they are earned or the reader reveals one on purpose. Grade, chapter and kind stay visible so the
+// roadmap still works without spoiling anything.
 
-const SPOILER_KINDS = new Set(['story', 'strand']);
-
-export function isSpoilerTrophy(trophy) {
-  return trophy.hidden && SPOILER_KINDS.has(trophy.kind);
+export function isSpoilerMasked(trophy, state) {
+  return state.settings.spoiler
+    && trophy.isSpoilerProtected
+    && !state.progress.earned.has(trophy.id)
+    && !state.ui.revealed.has(trophy.id);
 }
 
-/** What a view may print for a trophy right now. */
-export function applySpoilerMode(trophy, store) {
-  const masked = store.get().spoilersHidden && isSpoilerTrophy(trophy) && !store.isEarned(trophy.id);
-  if (!masked) return { masked: false, name: trophy.name, description: trophy.description };
-  return {
-    masked: true,
-    name: `Hidden ${trophy.kind === 'story' ? 'story' : 'side-strand'} trophy · ${trophy.chapter}`,
-    description: '▮▮▮▮▮▮ ▮▮▮▮ ▮▮▮▮▮ — earn it or show spoilers',
-  };
+export function maskedTrophyName(trophy) {
+  if (trophy.kind === 'story') return trophy.chapter.startsWith('Main') ? 'Hidden story mission' : `Hidden story trophy · ${trophy.chapter}`;
+  if (trophy.kind === 'strand') return 'Hidden strand trophy';
+  return 'Hidden trophy';
 }
 
-export function countMaskedTrophies(trophies, store) {
-  return trophies.filter((t) => applySpoilerMode(t, store).masked).length;
+export function displayName(trophy, state) {
+  return isSpoilerMasked(trophy, state) ? maskedTrophyName(trophy) : trophy.name;
 }
 
-export function bindSpoilerToggle(button, store) {
-  const paint = () => {
-    const hidden = store.get().spoilersHidden;
-    button.setAttribute('aria-pressed', String(hidden));
-    button.textContent = hidden ? '🔒 Spoilers hidden' : '👁 Spoilers shown';
-  };
-  button.addEventListener('click', () => store.setSpoilersHidden(!store.get().spoilersHidden));
-  store.subscribe(paint);
-  paint();
+export function displayDescription(trophy, state) {
+  return isSpoilerMasked(trophy, state)
+    ? 'Name and description hidden until earned'
+    : trophy.description;
+}
+
+export function revealTrophyOnce(trophy, state) {
+  state.ui.revealed.add(trophy.id);
+}
+
+// Mirrors the setting onto <body> so CSS can style masked text, and onto the header switch.
+export function applySpoilerMode(state) {
+  document.body.classList.toggle('spoilers-hidden', state.settings.spoiler);
+  const input = document.getElementById('spoiler-mode-input');
+  if (input) input.checked = state.settings.spoiler;
+  const label = document.querySelector('#spoiler-toggle .spoiler-label');
+  if (label) {
+    const masked = state.trophies.filter((t) => isSpoilerMasked(t, state)).length;
+    label.textContent = state.settings.spoiler ? `Spoilers hidden · ${masked}` : 'Spoilers shown';
+  }
 }
